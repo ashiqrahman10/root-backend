@@ -1,0 +1,10 @@
+flask
+requests
+anthropic  # Assuming this is a custom module or a private library
+pytesseract
+pdf2image
+Pillow  # PIL fork
+httpx  # Optional, depends on your preference for making HTTP requests
+playsound  # Optional, for audio playback
+ollama  # Assuming this is a custom module or a private library
+# logging
