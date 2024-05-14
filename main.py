@@ -4,14 +4,22 @@ from flask import Flask, request, jsonify, Response
 import anthropic
 import base64
 import httpx
-import ollama                                                                                                                                                                               
+# import ollama                                                                                                                                                                               
 import os
 import random
 import uuid
 import openmeteo_requests
+import ollama
 import requests_cache
 import pandas as pd
 from retry_requests import retry
+from flask import Flask, request, jsonify
+from flask_cors import CORS  
+import os
+# from ollama_lib import Ollama
+
+
+# ollama = Ollama()
 
 BASEURL = os.getcwd()
 API_KEY = '<API_KEY_HERE>'
@@ -28,12 +36,24 @@ def get_all_text(user_id, *args):
             print(text)
     return text
 
+# app = Flask(__name__)
 app = Flask(__name__)
+CORS(app)  # Enable CORS
 client = anthropic.Client(api_key=API_KEY)
 app.config['SECRET_KEY'] = 'secret!'
 
 @app.post("/get-weather")
 def weather():
+    messages_str = request.json.get("messages")
+    uid = request.json.get("uid")
+    previous_messages =""
+    # create_location_summary(uid)
+    if not os.path.exists("outputs"):
+        os.mkdir("outputs")
+    if not os.path.exists(f"outputs/{uid}"):
+        os.mkdir(f"outputs/{uid}")
+    with open(f"outputs/{uid}/location_summary.txt", "a+") as f:
+        previous_messages = f.read()
     # Setup the Open-Meteo API client with cache and retry on error
     cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
     retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
@@ -81,12 +101,30 @@ def weather():
     hourly_data["wind_speed_10m"] = hourly_wind_speed_10m
 
     hourly_dataframe = pd.DataFrame(data = hourly_data)
+    hourly_dataframe = hourly_dataframe.head(1)
     print(hourly_dataframe)
+    with open(f"outputs/{uid}/location_summary.txt", "a") as f:
+            print(f)
+            # session_response = f"""User : {messages_str}\n\nSage : {response["response"]}"""
+            f.write(str(hourly_dataframe.to_json(f, orient="records", indent=4)))
+    print(jsonify(hourly_dataframe.to_dict(orient="records")))
     return jsonify(hourly_dataframe.to_dict(orient="records"))
+
 
 
 @app.post("/soil-data")
 def get_ambee_soil_data():
+    messages_str = request.json.get("messages")
+    uid = request.json.get("uid")
+    previous_messages =""
+    # create_location_summary(uid)
+    if not os.path.exists("outputs"):
+        os.mkdir("outputs")
+    if not os.path.exists(f"outputs/{uid}"):
+        os.mkdir(f"outputs/{uid}")
+    with open(f"outputs/{uid}/location_summary.txt", "a+") as f:
+        previous_messages = f.read()
+    
     """Fetches soil data from Ambee API.
 
     Args:
@@ -115,6 +153,9 @@ def get_ambee_soil_data():
         response = rq.get(base_url, params=params, headers=headers)
         response.raise_for_status()  # Raise an exception for HTTP errors
         data = response.json()
+        with open(f"outputs/{uid}/location_summary.txt", "a") as f:
+            # session_response = f"""User : {messages_str}\n\nSage : {response["response"]}"""
+            f.write("\n\n"+str(data))
         return data
     except rq.exceptions.RequestException as e:
         print(f"Error fetching soil data: {e}")
@@ -137,12 +178,12 @@ def generate():
     messages_str = request.json.get("messages")
     uid = request.json.get("uid")
     previous_messages =""
-    # create_medical_summary(uid)
+    # create_location_summary(uid)
     if not os.path.exists("outputs"):
         os.mkdir("outputs")
     if not os.path.exists(f"outputs/{uid}"):
         os.mkdir(f"outputs/{uid}")
-    with open(f"outputs/{uid}/medical_summary.txt", "a+") as f:
+    with open(f"outputs/{uid}/location_summary.txt", "a+") as f:
         previous_messages = f.read()
     
     messages = f"Previous Chat : {previous_messages}\n\nCurrent Question : {messages_str}"
@@ -151,7 +192,7 @@ def generate():
     response = ollama.generate(model="qwen:1.8b", prompt=f"""Prompt : {system_prompt}\n\nContext:{messages}""", stream=False)
     
     print(response["response"])
-    with open(f"outputs/{uid}/mindfulness.txt", "a") as f:
+    with open(f"outputs/{uid}/location_summary.txt", "a") as f:
         session_response = f"""User : {messages_str}\n\nSage : {response["response"]}"""
         f.write(session_response)
                 
@@ -163,25 +204,29 @@ def chat():
     messages_str = request.json.get("messages")
     uid = request.json.get("uid")
     previous_messages =""
-    # create_medical_summary(uid)
+    # create_location_summary(uid)
     if not os.path.exists("outputs"):
         os.mkdir("outputs")
     if not os.path.exists(f"outputs/{uid}"):
         os.mkdir(f"outputs/{uid}")
-    with open(f"outputs/{uid}/medical_summary.txt", "a+") as f:
+    with open(f"outputs/{uid}/location_summary.txt", "r+") as f:
         previous_messages = f.read()
     
     messages = f"Previous Chat : {previous_messages}\n\nCurrent Question : {messages_str}"
-    system_prompt = """You are Sage, a sustainability-focused agricultural consultant. You possess a vast knowledge of sustainable farming practices and regional ecosystems. You prioritize data-driven analysis for informed decision-making. You excel at interpreting GIS data and translating it into actionable recommendations. Given a JSON file containing the following agricultural data: Location: Specific coordinates (latitude and longitude) Soil Properties: pH, nutrient levels (nitrogen, phosphorus, potassium), organic matter content Climate Data: Average temperature, rainfall patterns, sunlight hours Elevation: Height above sea level Sage should analyze the data and provide a comprehensive response including: Suitable Crop Recommendations: Suggest a list of crops best suited for the specific location's climate, soil conditions, and elevation. Prioritize crops known for their sustainability and low environmental impact. Sustainable Growing Methods: Recommend sustainable practices based on the data, such as: Crop rotation strategies to improve soil health. Water conservation techniques like drip irrigation. Organic pest and disease management methods. Techniques to minimize soil erosion. Additional Considerations: If the data reveals any limitations (e.g., unsuitable soil pH), suggest appropriate amendments or alternative crops. Briefly explain the reasoning behind each recommendation, connecting it to the specific data points. Remember: Maintain a positive and encouraging tone. Emphasize the importance of sustainable practices for long-term success. Offer additional resources or suggest contacting local agricultural experts for further guidance."""
+    system_prompt = """You are Sage, a sustainability-focused agricultural consultant. You possess a vast knowledge of sustainable farming practices and regional ecosystems. You prioritize data-driven analysis for informed decision-making. You excel at interpreting GIS data and translating it into actionable recommendations. Given a JSON file containing the following agricultural data: Location: Specific coordinates (latitude and longitude) Soil Properties: pH, nutrient levels (nitrogen, phosphorus, potassium), organic matter content Climate Data: Average temperature, rainfall patterns, sunlight hours Elevation: Height above sea level Sage should analyze the data and provide a comprehensive response including: Suitable Crop Recommendations: Suggest a list of crops best suited for the specific location's climate, soil conditions, and elevation. Prioritize crops known for their sustainability and low environmental impact. Sustainable Growing Methods: Recommend sustainable practices based on the data, such as: Crop rotation strategies to improve soil health. Water conservation techniques like drip irrigation. Organic pest and disease management methods. Techniques to minimize soil erosion. Additional Considerations: If the data reveals any limitations (e.g., unsuitable soil pH), suggest appropriate amendments or alternative crops. Briefly explain the reasoning behind each recommendation, connecting it to the specific data points. Remember: Maintain a positive and encouraging tone. Emphasize the importance of sustainable practices for long-term success. Offer additional resources or suggest contacting local agricultural experts for further guidance. You have access to the weather and soil parameters data through "Previous Chat : " section. you should give ONLY THE VALUE of the respected parameter from the "Previous Chat : ". Always limit your normal response to 2 or 3 sentences"""
     print(messages)
     response = ollama.generate(model="qwen:1.8b", prompt=f"""Prompt : {system_prompt}\n\nContext:{messages}""", stream=False)
     
     print(response["response"])
-    with open(f"outputs/{uid}/mindfulness.txt", "a") as f:
+    with open(f"outputs/{uid}/chat_history.txt", "a") as f:
         session_response = f"""User : {messages_str}\n\nSage : {response["response"]}"""
         f.write(session_response)
                 
-    return jsonify(response["response"].replace("\n","")) 
+    response_obj = jsonify(response["response"].replace("\n",""))
+    response_obj.headers.add('Access-Control-Allow-Origin', '*') # Allow requests from any origin
+    response_obj.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response_obj.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response_obj 
 
 
 

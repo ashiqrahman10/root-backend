@@ -1,0 +1,9 @@
+
+
+{'message': 'success', 'stations': [{'CO': 0.289, 'NO2': 6.068, 'OZONE': 16.401, 'PM10': 38.142, 'PM25': 21.552, 'SO2': 4.013, 'city': 'Chamarajanagar Sub-District', 'countryCode': 'IN', 'division': 'Chamarajanagar', 'lat': 12, 'lng': 77, 'placeName': 'Kempanapura', 'postalCode': '571117', 'state': 'Karnataka', 'updatedAt': '2024-05-14T03:00:00.000Z', 'AQI': 71, 'aqiInfo': {'pollutant': 'PM2.5', 'concentration': 21.552, 'category': 'Moderate'}}]}
+
+{'message': 'success', 'stations': [{'CO': 0.289, 'NO2': 6.068, 'OZONE': 16.401, 'PM10': 38.142, 'PM25': 21.552, 'SO2': 4.013, 'city': 'Chamarajanagar Sub-District', 'countryCode': 'IN', 'division': 'Chamarajanagar', 'lat': 12, 'lng': 77, 'placeName': 'Kempanapura', 'postalCode': '571117', 'state': 'Karnataka', 'updatedAt': '2024-05-14T03:00:00.000Z', 'AQI': 71, 'aqiInfo': {'pollutant': 'PM2.5', 'concentration': 21.552, 'category': 'Moderate'}}]}
+
+{'message': 'success', 'stations': [{'CO': 0.289, 'NO2': 6.068, 'OZONE': 16.401, 'PM10': 38.142, 'PM25': 21.552, 'SO2': 4.013, 'city': 'Chamarajanagar Sub-District', 'countryCode': 'IN', 'division': 'Chamarajanagar', 'lat': 12, 'lng': 77, 'placeName': 'Kempanapura', 'postalCode': '571117', 'state': 'Karnataka', 'updatedAt': '2024-05-14T03:00:00.000Z', 'AQI': 71, 'aqiInfo': {'pollutant': 'PM2.5', 'concentration': 21.552, 'category': 'Moderate'}}]}
+
+{'message': 'success', 'stations': [{'CO': 0.289, 'NO2': 6.068, 'OZONE': 16.401, 'PM10': 38.142, 'PM25': 21.552, 'SO2': 4.013, 'city': 'Chamarajanagar Sub-District', 'countryCode': 'IN', 'division': 'Chamarajanagar', 'lat': 12, 'lng': 77, 'placeName': 'Kempanapura', 'postalCode': '571117', 'state': 'Karnataka', 'updatedAt': '2024-05-14T03:00:00.000Z', 'AQI': 71, 'aqiInfo': {'pollutant': 'PM2.5', 'concentration': 21.552, 'category': 'Moderate'}}]}
