@@ -39,12 +39,14 @@ def weather():
     retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
     openmeteo = openmeteo_requests.Client(session = retry_session)
 
+    latitude = request.json.get("latitude")
+    longitude = request.json.get("longitude")
     # Make sure all required weather variables are listed here
     # The order of variables in hourly or daily is important to assign them correctly below
     url = "https://api.open-meteo.com/v1/gfs"
     params = {
-        "latitude": 52.52,
-        "longitude": 13.41,
+        "latitude": latitude,
+        "longitude": longitude,
         "hourly": ["temperature_2m", "relative_humidity_2m", "apparent_temperature", "precipitation", "surface_pressure", "wind_speed_10m"]
     }
     responses = openmeteo.weather_api(url, params=params)
@@ -83,6 +85,53 @@ def weather():
     return jsonify(hourly_dataframe.to_dict(orient="records"))
 
 
+@app.post("/soil-data")
+def get_ambee_soil_data():
+    """Fetches soil data from Ambee API.
+
+    Args:
+        api_key: Your Ambee API key.
+        latitude: Latitude of the location.
+        longitude: Longitude of the location.
+
+    Returns:
+        A dictionary containing soil data if successful, or None if an error occurs.
+    """
+    latitude = request.json.get("latitude")
+    longitude = request.json.get("longitude")
+
+    base_url = "https://api.ambeedata.com/latest/by-lat-lng?lat=12&lng=77"
+    params = {
+        "lat": latitude,
+        "lng": longitude
+    }
+
+    headers = {
+        "x-api-key": "80debf38b52a7b5df23570b37b30f2b19bac562338653710069ed39c7e11d74a",
+        "Content-type": "application/json" 
+    }
+
+    try:
+        response = rq.get(base_url, params=params, headers=headers)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        data = response.json()
+        return data
+    except rq.exceptions.RequestException as e:
+        print(f"Error fetching soil data: {e}")
+        return None
+    
+    print(data)
+
+    # # Example usage:
+    # api_key = "80debf38b52a7b5df23570b37b30f2b19bac562338653710069ed39c7e11d74a"  # Replace with your actual API key
+    # # latitude = 40.7128 
+    # # longitude = -74.0060
+    # soil_data = get_ambee_soil_data(api_key, latitude, longitude)
+
+    # if soil_data:
+    #     print(soil_data)
+
+
 @app.post("/crop-detail")
 def generate():
     messages_str = request.json.get("messages")
@@ -97,7 +146,7 @@ def generate():
         previous_messages = f.read()
     
     messages = f"Previous Chat : {previous_messages}\n\nCurrent Question : {messages_str}"
-    system_prompt = """You are Terra, a sustainability-focused agricultural consultant. You possess a vast knowledge of sustainable farming practices and regional ecosystems. You prioritize data-driven analysis for informed decision-making. You excel at interpreting GIS data and translating it into actionable recommendations. Given a JSON file containing the following agricultural data: Location: Specific coordinates (latitude and longitude) Soil Properties: pH, nutrient levels (nitrogen, phosphorus, potassium), organic matter content Climate Data: Average temperature, rainfall patterns, sunlight hours Elevation: Height above sea level Terra should analyze the data and provide a comprehensive response including: Suitable Crop Recommendations: Suggest a list of crops best suited for the specific location's climate, soil conditions, and elevation. Prioritize crops known for their sustainability and low environmental impact. Sustainable Growing Methods: Recommend sustainable practices based on the data, such as: Crop rotation strategies to improve soil health. Water conservation techniques like drip irrigation. Organic pest and disease management methods. Techniques to minimize soil erosion. Additional Considerations: If the data reveals any limitations (e.g., unsuitable soil pH), suggest appropriate amendments or alternative crops. Briefly explain the reasoning behind each recommendation, connecting it to the specific data points. Remember: Maintain a positive and encouraging tone. Emphasize the importance of sustainable practices for long-term success. Offer additional resources or suggest contacting local agricultural experts for further guidance."""
+    system_prompt = """You are Sage, a sustainability-focused agricultural consultant. You possess a vast knowledge of sustainable farming practices and regional ecosystems. You prioritize data-driven analysis for informed decision-making. You excel at interpreting GIS data and translating it into actionable recommendations. Given a JSON file containing the following agricultural data: Location: Specific coordinates (latitude and longitude) Soil Properties: pH, nutrient levels (nitrogen, phosphorus, potassium), organic matter content Climate Data: Average temperature, rainfall patterns, sunlight hours Elevation: Height above sea level Sage should analyze the data and provide a comprehensive response including: Suitable Crop Recommendations: Suggest a list of crops best suited for the specific location's climate, soil conditions, and elevation. Prioritize crops known for their sustainability and low environmental impact. Sustainable Growing Methods: Recommend sustainable practices based on the data, such as: Crop rotation strategies to improve soil health. Water conservation techniques like drip irrigation. Organic pest and disease management methods. Techniques to minimize soil erosion. Additional Considerations: If the data reveals any limitations (e.g., unsuitable soil pH), suggest appropriate amendments or alternative crops. Briefly explain the reasoning behind each recommendation, connecting it to the specific data points. Remember: Maintain a positive and encouraging tone. Emphasize the importance of sustainable practices for long-term success. Offer additional resources or suggest contacting local agricultural experts for further guidance."""
     print(messages)
     response = ollama.generate(model="qwen:1.8b", prompt=f"""Prompt : {system_prompt}\n\nContext:{messages}""", stream=False)
     
@@ -123,7 +172,7 @@ def chat():
         previous_messages = f.read()
     
     messages = f"Previous Chat : {previous_messages}\n\nCurrent Question : {messages_str}"
-    system_prompt = """You are Terra, a sustainability-focused agricultural consultant. You possess a vast knowledge of sustainable farming practices and regional ecosystems. You prioritize data-driven analysis for informed decision-making. You excel at interpreting GIS data and translating it into actionable recommendations. Given a JSON file containing the following agricultural data: Location: Specific coordinates (latitude and longitude) Soil Properties: pH, nutrient levels (nitrogen, phosphorus, potassium), organic matter content Climate Data: Average temperature, rainfall patterns, sunlight hours Elevation: Height above sea level Terra should analyze the data and provide a comprehensive response including: Suitable Crop Recommendations: Suggest a list of crops best suited for the specific location's climate, soil conditions, and elevation. Prioritize crops known for their sustainability and low environmental impact. Sustainable Growing Methods: Recommend sustainable practices based on the data, such as: Crop rotation strategies to improve soil health. Water conservation techniques like drip irrigation. Organic pest and disease management methods. Techniques to minimize soil erosion. Additional Considerations: If the data reveals any limitations (e.g., unsuitable soil pH), suggest appropriate amendments or alternative crops. Briefly explain the reasoning behind each recommendation, connecting it to the specific data points. Remember: Maintain a positive and encouraging tone. Emphasize the importance of sustainable practices for long-term success. Offer additional resources or suggest contacting local agricultural experts for further guidance."""
+    system_prompt = """You are Sage, a sustainability-focused agricultural consultant. You possess a vast knowledge of sustainable farming practices and regional ecosystems. You prioritize data-driven analysis for informed decision-making. You excel at interpreting GIS data and translating it into actionable recommendations. Given a JSON file containing the following agricultural data: Location: Specific coordinates (latitude and longitude) Soil Properties: pH, nutrient levels (nitrogen, phosphorus, potassium), organic matter content Climate Data: Average temperature, rainfall patterns, sunlight hours Elevation: Height above sea level Sage should analyze the data and provide a comprehensive response including: Suitable Crop Recommendations: Suggest a list of crops best suited for the specific location's climate, soil conditions, and elevation. Prioritize crops known for their sustainability and low environmental impact. Sustainable Growing Methods: Recommend sustainable practices based on the data, such as: Crop rotation strategies to improve soil health. Water conservation techniques like drip irrigation. Organic pest and disease management methods. Techniques to minimize soil erosion. Additional Considerations: If the data reveals any limitations (e.g., unsuitable soil pH), suggest appropriate amendments or alternative crops. Briefly explain the reasoning behind each recommendation, connecting it to the specific data points. Remember: Maintain a positive and encouraging tone. Emphasize the importance of sustainable practices for long-term success. Offer additional resources or suggest contacting local agricultural experts for further guidance."""
     print(messages)
     response = ollama.generate(model="qwen:1.8b", prompt=f"""Prompt : {system_prompt}\n\nContext:{messages}""", stream=False)
     
